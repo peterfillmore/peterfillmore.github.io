@@ -4,8 +4,7 @@ title: Peter Fillmore personal site
 ---
 <div class="blurb">
     <h1>Test</h1>
-    <p> <a href="/about">Read more about my life...</a></p>
-    <p> <a href="/blog">Read more about my life...</a></p>
+    <p> <a href="/about">about</a></p>
+    <p> <a href="/blog">blog</a></p>
 </div>
 <!-- /.blurb -->
-
