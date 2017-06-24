@@ -22,7 +22,7 @@ You are mainly looking for details of the
 [Keil 8051 Instruction Set Manual](http://www.keil.com/support/man/docs/is51/)
 [8051 Instruction Set](https://www.win.tue.nl/~aeb/comp/8051/set8051.html)
 
-#Define the registers of chip and the widths.
+# Define the registers of chip and the widths.
 ```
 Registers = [
     'SP',       #stack pointer 0x81
@@ -40,7 +40,7 @@ Registers = [
     'R7'
 ]
 ```
-#Define the addressing modes of the device*
+# Define the addressing modes of the device*
 Here we are defining how operands are addressed.
 Most processors will use these basic addressing modes:
 +Register
@@ -51,25 +51,25 @@ These effect how the disassembler will render and translate instructions. The ad
 Each processor will support a mix of different modes depending on its architecture and memory layout. These will also be syntaxed differently depending on the chip, and the assembler syntax (e.g intel or ATT syntax etc)
 
 For the 8051 i identified the following modes
-##IMMEDIATE_MODE - MOV A,#20h
+## IMMEDIATE_MODE - MOV A,#20h
 Instructions that use immediate data that is encoded in the raw binary.
 the "#" indicates that the 0x20 value is to be written to register 'A'. here the 0x20 is encoded in the raw binary (e520 = MOV A, #20h).
 
-##REGISTER_MODE = 1 #Register Addressing MOV A, R0
+## REGISTER_MODE = 1 #Register Addressing MOV A, R0
 Register-Register transfer modes. Here we are just using the internal registers to perform operations.
 
-##DIRECT_MODE = 2 #Direct Addressing   MOV A,30h
+## DIRECT_MODE = 2 #Direct Addressing   MOV A,30h
 Direct addressing mode - Here we directly accessing memory of the device. 
 In this example the value at memory location 0x30 is moved into register 'A'.
 
-##REG_INDIRECT_MODE = 3   #Indirect Addressing MOV A,@R0
+## REG_INDIRECT_MODE = 3   #Indirect Addressing MOV A,@R0
 Here we are starting to read data indirectly, or to put it another way use pointers.
 We have a value in register 'R0' which represents an address; and we want the value at an address to be put into register 'A'.
 i.e.
 `A = R0[0]
 The "@" symbol in this case can be thought of as the "*" operator in C
 
-##CODE_MODE = 5       #Code Indirect   MOVC A,@A+DPTR
+## CODE_MODE = 5       #Code Indirect   MOVC A,@A+DPTR
 Another mode is offset indirect addressessing. 
 Here we add the values in the 'A' register and the 'DPTR' to get the memory address to read.
 We then copy the value in this address to register 'A'.
@@ -90,7 +90,7 @@ BIT_CLEAR_MODE = 8 #MOV bit addr,C
 IMMEDIATE_OFFSET_MODE = 9 #CJNE A,#data,reladdr
 DIRECT_OFFSET_MODE = 10 #CJNE A,imm_data,reladdr
 ```
-#Step 4: Define the Operand Tokens
+# Define the Operand Tokens
 Now we have an idea of what each mode looks like lets get to telling Binary Ninja how to render them.
 We define a Map for each mode - which is addressed using the constants we made above
 Each entry is defined as a standard lambda function with the 3 variables provided when we call it. (this allows for code reuse later)
@@ -184,7 +184,7 @@ OperandTokenGen = [
     ]
 ]
 ```
-#Implementing the architecture
+# Implementing the architecture
 Now we are ready to glue everything together for the disassembler!
 Here we use the [Architecture class](https://api.binary.ninja/binaryninja.architecture-module.html) to define a new architecture.
 ```
