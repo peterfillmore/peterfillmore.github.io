@@ -43,9 +43,9 @@ Registers = [
 # Define the addressing modes of the device*
 Here we are defining how operands are addressed.
 Most processors will use these basic addressing modes:
-+Register
-+Immediate
-+Memory
++ Register
++ Immediate
++ Memory
 
 These effect how the disassembler will render and translate instructions. The addressing mode tells the processor how to access and write data for that operation. This can be simple memory and register accesses (MOV Reg, Memory) , to modes that perform indirect memory accesses and shift data (e.g LDMIA R0!, { R5-R8 }).
 Each processor will support a mix of different modes depending on its architecture and memory layout. These will also be syntaxed differently depending on the chip, and the assembler syntax (e.g intel or ATT syntax etc)
