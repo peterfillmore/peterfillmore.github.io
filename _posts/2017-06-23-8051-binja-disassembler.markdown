@@ -4,18 +4,18 @@ title:  "Creating a disassembler plugin for Binary Ninja"
 date:   2017-06-23 22:30:47 +1000
 categories: jekyll update
 ---
-#Intro
+# Intro
 Recently i've been researching USB flash drives and the [BadUSB](https://opensource.srlabs.de/projects/badusb) class of attacks. 
 I initially have been using the IDAPro disassembler for this research which provides a lot of functionality out of the box but costs $$$. I'd recently purchased a copy of [Binary Ninja](https://binary.ninja/) as it offers a heap of functionality for a lot less money, looks good and provides an integrated API for creating your own plugins.
 Another thing that Binary Ninja offers is a [community repository](https://github.com/Vector35/community-plugins) for Plugins.
 Since the 8051 is not supported out-of-the-box by Binja; i decided to wack together a disassembler and lifter for it. This is a great architecture to do this for as it is incredibly simple and straightforward.
 
-##About the 8051
+## About the 8051
 The 8051 originates from 1980 as one of Intels early microcontrollers. It most likely is the most used architecture in the world given its prevalence in basic embedded systems, i'd guess that at least 90% of all usb flash drives has an 8051 based controller IC.
 Why it has become so prevalent is due to it being simple, well-supported, cheap and patent incumbered.
 [8051 History](http://www.efton.sk/t0t1/history8051.pdf)
 
-#Researching the architecture
+# Researching the architecture
 Obtain all the references you can to the architecture you are implemented.
 You are mainly looking for details of the 
 
