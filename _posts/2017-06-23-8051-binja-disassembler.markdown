@@ -4,13 +4,26 @@ title:  "Creating a disassembler plugin for Binary Ninja"
 date:   2017-06-23 22:30:47 +1000
 categories: jekyll update
 ---
-**Creating a Lifter and disassembler plug-in for binary ninja.**
+#Intro
+Recently i've been researching USB flash drives and the [BadUSB](https://opensource.srlabs.de/projects/badusb) class of attacks. 
+I initially have been using the IDAPro disassembler for this research which provides a lot of functionality out of the box but costs $$$. I'd recently purchased a copy of [Binary Ninja](https://binary.ninja/) as it offers a heap of functionality for a lot less money, looks good and provides an integrated API for creating your own plugins.
+Another thing that Binary Ninja offers is a [community repository](https://github.com/Vector35/community-plugins) for Plugins.
+Since the 8051 is not supported out-of-the-box by Binja; i decided to wack together a disassembler and lifter for it. This is a great architecture to do this for as it is incredibly simple and straightforward.
 
-*Step 1: research the architecture*
-Key thing is to obtain a listing for all the instructions, including the mnemonics 
+##About the 8051
+The 8051 originates from 1980 as one of Intels early microcontrollers. It most likely is the most used architecture in the world given its prevalence in basic embedded systems, i'd guess that at least 90% of all usb flash drives has an 8051 based controller IC.
+Why it has become so prevalent is due to it being simple, well-supported, cheap and patent incumbered.
+[8051 History](http://www.efton.sk/t0t1/history8051.pdf)
 
-*Step 2: define the registers of chip and the widths.*
+#Researching the architecture
+Obtain all the references you can to the architecture you are implemented.
+You are mainly looking for details of the 
 
+[Keil 8051 Instruction Set Manual](http://www.keil.com/support/man/docs/is51/)
+[8051 Instruction Set](https://www.win.tue.nl/~aeb/comp/8051/set8051.html)
+
+#Define the registers of chip and the widths.
+```
 Registers = [
     'SP',       #stack pointer 0x81
     'DPTR',       #data pointer  0x82-83
@@ -26,37 +39,37 @@ Registers = [
     'R6',
     'R7'
 ]
-
-*Step 3: define the addressing modes of the device*
+```
+#Define the addressing modes of the device*
 Here we are defining how operands are addressed.
 Most processors will use these basic addressing modes:
-*Register
-*Immediate
-*Memory
++Register
++Immediate
++Memory
 
 These effect how the disassembler will render and translate instructions. The addressing mode tells the processor how to access and write data for that operation. This can be simple memory and register accesses (MOV Reg, Memory) , to modes that perform indirect memory accesses and shift data (e.g LDMIA R0!, { R5-R8 }).
 Each processor will support a mix of different modes depending on its architecture and memory layout. These will also be syntaxed differently depending on the chip, and the assembler syntax (e.g intel or ATT syntax etc)
 
 For the 8051 i identified the following modes
-IMMEDIATE_MODE - MOV A,#20h
+##IMMEDIATE_MODE - MOV A,#20h
 Instructions that use immediate data that is encoded in the raw binary.
 the "#" indicates that the 0x20 value is to be written to register 'A'. here the 0x20 is encoded in the raw binary (e520 = MOV A, #20h).
 
-REGISTER_MODE = 1 #Register Addressing MOV A, R0
+##REGISTER_MODE = 1 #Register Addressing MOV A, R0
 Register-Register transfer modes. Here we are just using the internal registers to perform operations.
 
-DIRECT_MODE = 2 #Direct Addressing   MOV A,30h
+##DIRECT_MODE = 2 #Direct Addressing   MOV A,30h
 Direct addressing mode - Here we directly accessing memory of the device. 
 In this example the value at memory location 0x30 is moved into register 'A'.
 
-REG_INDIRECT_MODE = 3   #Indirect Addressing MOV A,@R0
+##REG_INDIRECT_MODE = 3   #Indirect Addressing MOV A,@R0
 Here we are starting to read data indirectly, or to put it another way use pointers.
 We have a value in register 'R0' which represents an address; and we want the value at an address to be put into register 'A'.
 i.e.
-A = R0[0]
+`A = R0[0]
 The "@" symbol in this case can be thought of as the "*" operator in C
 
-CODE_MODE = 5       #Code Indirect   MOVC A,@A+DPTR
+##CODE_MODE = 5       #Code Indirect   MOVC A,@A+DPTR
 Another mode is offset indirect addressessing. 
 Here we add the values in the 'A' register and the 'DPTR' to get the memory address to read.
 We then copy the value in this address to register 'A'.
@@ -64,7 +77,7 @@ so in pseudo C:
 A = *(A+DPTR)
 
 Below is the table created - many of these are present for assisting with the formatting of the disassembly
-
+```
 IMMEDIATE_MODE = 0  #Immediate Addressing    MOV A,#20h
 REGISTER_MODE = 1 #Register Addressing MOV A, R0
 DIRECT_MODE = 2 #Direct Addressing   MOV A,30h
@@ -76,8 +89,8 @@ BIT_INDEXED_MODE = 7 #jnb ACC.0, code_addr
 BIT_CLEAR_MODE = 8 #MOV bit addr,C
 IMMEDIATE_OFFSET_MODE = 9 #CJNE A,#data,reladdr
 DIRECT_OFFSET_MODE = 10 #CJNE A,imm_data,reladdr
-
-*Step 4: Define the Operand Tokens*
+```
+#Step 4: Define the Operand Tokens
 Now we have an idea of what each mode looks like lets get to telling Binary Ninja how to render them.
 We define a Map for each mode - which is addressed using the constants we made above
 Each entry is defined as a standard lambda function with the 3 variables provided when we call it. (this allows for code reuse later)
@@ -89,6 +102,7 @@ TextToken(text) - Treat the token as a text value
 PossibleAddressToken(text, address) - Token is most likely an address so Binary Ninja will render it and link to memory (so you can double click and go to that address)
 
 So for Immediate addressing we translate "#20h" into:
+```
 lambda value, _, _ : [ #IMMEDIATE
         InstructionTextToken(TextToken,'#'), # "#"
         InstructionTextToken(PossibleAddressToken, hex(value), value) # tell binja its an address and print the hex value
@@ -116,8 +130,9 @@ lambda reg, value, addr: [ #code mode
         InstructionTextToken(OperandSeperatorToken, '+'),   #append a "+"
         InstructionTextToken(RegisterToken, value)          #and the register
     ],
-
+```
 Heres the finalised Map:
+```
 OperandTokenGen = [
     lambda reg, value, addr : [ #IMMEDIATE
         InstructionTextToken(TextToken,'#'),
@@ -168,18 +183,19 @@ OperandTokenGen = [
         InstructionTextToken(PossibleAddressToken, hex(value), value)
     ]
 ]
-
-*step 6: Implementing the architecture*
+```
+#Implementing the architecture
 Now we are ready to glue everything together for the disassembler!
-Here we use the Architecture class (https://api.binary.ninja/binaryninja.architecture-module.html) to define a new architecture.
-
+Here we use the [Architecture class](https://api.binary.ninja/binaryninja.architecture-module.html) to define a new architecture.
+```
 class i8051(Architecture):
     name = 'i8051' #name of architecture 
     address_size = 2 #bus size - in an 8051 we have a 16bit bus
     default_int_size = 1 #int size - 8051 ints are 8 bits 
     max_instr_length = 3 #max length of an instruction for 8051 is 3 bytes
-
+```
 next we define our register Map.
+```
 RegisterInfo(name, length in bytes)
     regs = {
         'A': RegisterInfo(  'A', 1),
@@ -196,8 +212,9 @@ RegisterInfo(name, length in bytes)
         'R7': RegisterInfo( 'R7', 1),
         'SP': RegisterInfo( 'SP', 2)
     }
-
+```
 Then the function that handles the decoding of instructions:
+```
 def decode_instruction(self, data, addr):
     error_value = (None, None, None, None, None, None, None, None, None)
     instruction = struct.unpack('<B', data[0])[0] #we unpack each instruction, each 8051 instruction is 1 byte long
@@ -209,11 +226,13 @@ def decode_instruction(self, data, addr):
             direct_addr = ((high_address & 0xe0 >> 5) << 8) | low_address #we decode the address
             return_addr = ((addr + 2) & 0xF800) + direct_addr
             return 'AJMP', 1, None, DIRECT_MODE, None, return_addr, 2, None, None #then return the result instr, width, src_op, dst_op, src, dst,length, src_val, dst_val
-    
+```    
 here is the code to decode a MOV A, #30h instruction (0x7430)
-    elif instruction == 0x74:
-        imm_data = struct.unpack('>B', data[1])[0]
-        return 'MOV',   1, IMMEDIATE_MODE, REGISTER_MODE, imm_data, 'A', 2, None, None
+```
+elif instruction == 0x74:
+    imm_data = struct.unpack('>B', data[1])[0]
+    return 'MOV',   1, IMMEDIATE_MODE, REGISTER_MODE, imm_data, 'A', 2, None, None
+```
 So the source is the immediate value 30 - IMMEDIATE MODE
 and dest is register A - REGISTER MODE
 width is 1 byte (single byte registers)
@@ -222,7 +241,8 @@ length is 2 bytes.
 So we do this for all supported instructions (256 on an 8051)
 
 Next up is creating the text for the disassembled instruction
- def perform_get_instruction_text(self, data, addr):
+```
+def perform_get_instruction_text(self, data, addr):
         #decode the instruction
         (instr, width, src_operand, dst_operand, src, dst, length, src_value, dst_value) = self.decode_instruction(data, addr)
         if instr is None:
@@ -244,21 +264,4 @@ Next up is creating the text for the disassembled instruction
             tokens += OperandTokenGen[src_operand](src, src_value, addr)
 
         return tokens, length #return the token list
-        
-
-
-Jekyll also offers powerful support for code snippets:
-
-{% highlight ruby %}
-def print_hi(name)
-  puts "Hi, #{name}"
-end
-print_hi('Tom')
-#=> prints 'Hi, Tom' to STDOUT.
-{% endhighlight %}
-
-Check out the [Jekyll docs][jekyll-docs] for more info on how to get the most out of Jekyll. File all bugs/feature requests at [Jekyll’s GitHub repo][jekyll-gh]. If you have questions, you can ask them on [Jekyll Talk][jekyll-talk].
-
-[jekyll-docs]: https://jekyllrb.com/docs/home
-[jekyll-gh]:   https://github.com/jekyll/jekyll
-[jekyll-talk]: https://talk.jekyllrb.com/
+```
