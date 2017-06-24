@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Welcome to Jekyll!"
+title:  "Creating a disassembler plugin for Binary Ninja"
 date:   2017-06-23 22:30:47 +1000
 categories: jekyll update
 ---
